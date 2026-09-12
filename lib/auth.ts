@@ -25,6 +25,7 @@ export async function signUp(email: string, password: string, role: UserRole, ad
         full_name: additionalData?.full_name,
         phone: additionalData?.phone,
       },
+      emailRedirectTo: `${window.location.origin}/login/user`,
     },
   });
 
@@ -35,6 +36,8 @@ export async function signUp(email: string, password: string, role: UserRole, ad
     }
     throw error;
   }
+  
+  // Return success without requiring OTP verification for now
   return data;
 }
 

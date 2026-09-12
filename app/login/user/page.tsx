@@ -2,41 +2,25 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, Mail, Lock, ArrowRight, Sparkles, ShoppingBag, Utensils, Phone, Key } from 'lucide-react';
+import { User, Mail, Lock, ArrowRight, Sparkles, ShoppingBag, Utensils, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
-import { signUp, signIn, verifyOTP, resendOTP } from '@/lib/auth';
+import { signUp, signIn } from '@/lib/auth';
 
 export default function UserLogin() {
   const router = useRouter();
   const [isLogin, setIsLogin] = useState(true);
-  const [showOTP, setShowOTP] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [countdown, setCountdown] = useState(0);
 
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     fullName: '',
     phone: '',
-    otp: '',
   });
-
-  const startCountdown = () => {
-    setCountdown(60);
-    const timer = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,36 +33,16 @@ export default function UserLogin() {
         await signIn(formData.email, formData.password);
         setSuccess('Login successful! Redirecting...');
         setTimeout(() => router.push('/'), 1000);
-      } else if (showOTP) {
-        await verifyOTP(formData.email, formData.otp);
-        setSuccess('Email verified successfully! You can now login.');
-        setShowOTP(false);
-        setIsLogin(true);
       } else {
         await signUp(formData.email, formData.password, 'user', {
           full_name: formData.fullName,
           phone: formData.phone,
         });
-        setSuccess('Account created! Please check your email for OTP verification.');
-        setShowOTP(true);
-        startCountdown();
+        setSuccess('Account created successfully! You can now login.');
+        setIsLogin(true);
       }
     } catch (err: any) {
       setError(err.message || 'Authentication failed');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleResendOTP = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      await resendOTP(formData.email);
-      setSuccess('OTP resent successfully!');
-      startCountdown();
-    } catch (err: any) {
-      setError(err.message || 'Failed to resend OTP');
     } finally {
       setLoading(false);
     }
@@ -107,45 +71,43 @@ export default function UserLogin() {
             <div className="flex items-center justify-center gap-2 mb-2">
               <Sparkles className="h-5 w-5" />
               <h2 className="text-xl font-bold">
-                {showOTP ? 'Verify Email' : isLogin ? 'Welcome Back!' : 'Join FoodDash'}
+                {isLogin ? 'Welcome Back!' : 'Join FoodDash'}
               </h2>
               <Sparkles className="h-5 w-5" />
             </div>
             <p className="text-white/80 text-center">
-              {showOTP ? 'Enter the OTP sent to your email' : isLogin ? 'Login to order your favorite food' : 'Create account to start ordering'}
+              {isLogin ? 'Login to order your favorite food' : 'Create account to start ordering'}
             </p>
           </div>
 
           <div className="p-6">
-            {!showOTP && (
-              /* Toggle */
-              <div className="flex items-center justify-center gap-2 mb-6 bg-gray-100 p-1 rounded-lg">
-                <button
-                  onClick={() => { setIsLogin(true); setError(''); setSuccess(''); }}
-                  className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
-                    isLogin 
-                      ? 'bg-white shadow text-orange-600' 
-                      : 'text-gray-600 hover:text-gray-800'
-                  }`}
-                >
-                  Login
-                </button>
-                <button
-                  onClick={() => { setIsLogin(false); setError(''); setSuccess(''); }}
-                  className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
-                    !isLogin 
-                      ? 'bg-white shadow text-orange-600' 
-                      : 'text-gray-600 hover:text-gray-800'
-                  }`}
-                >
-                  Sign Up
-                </button>
-              </div>
-            )}
+            {/* Toggle */}
+            <div className="flex items-center justify-center gap-2 mb-6 bg-gray-100 p-1 rounded-lg">
+              <button
+                onClick={() => { setIsLogin(true); setError(''); setSuccess(''); }}
+                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
+                  isLogin 
+                    ? 'bg-white shadow text-orange-600' 
+                    : 'text-gray-600 hover:text-gray-800'
+                }`}
+              >
+                Login
+              </button>
+              <button
+                onClick={() => { setIsLogin(false); setError(''); setSuccess(''); }}
+                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
+                  !isLogin 
+                    ? 'bg-white shadow text-orange-600' 
+                    : 'text-gray-600 hover:text-gray-800'
+                }`}
+              >
+                Sign Up
+              </button>
+            </div>
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
-              {!isLogin && !showOTP && (
+              {!isLogin && (
                 <>
                   <div>
                     <label className="mb-1 block text-sm font-medium text-gray-700">Full Name</label>
@@ -176,73 +138,35 @@ export default function UserLogin() {
                 </>
               )}
 
-              {!showOTP && (
-                <>
-                  <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-700">Email</label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                      <Input
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        placeholder="you@example.com"
-                        className="pl-10 border-gray-200 focus:border-orange-500"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-700">Password</label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                      <Input
-                        type="password"
-                        value={formData.password}
-                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                        placeholder="••••••••"
-                        className="pl-10 border-gray-200 focus:border-orange-500"
-                        required
-                      />
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {showOTP && (
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">Enter OTP</label>
-                  <div className="relative">
-                    <Key className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                    <Input
-                      value={formData.otp}
-                      onChange={(e) => setFormData({ ...formData, otp: e.target.value })}
-                      placeholder="123456"
-                      className="pl-10 border-gray-200 focus:border-orange-500"
-                      required
-                      maxLength={6}
-                    />
-                  </div>
-                  <div className="mt-2 flex items-center justify-between">
-                    <p className="text-xs text-gray-500">
-                      Didn't receive code?{' '}
-                      {countdown > 0 ? (
-                        <span className="text-orange-600">Resend in {countdown}s</span>
-                      ) : (
-                      <button
-                        type="button"
-                        onClick={handleResendOTP}
-                        className="text-orange-600 hover:text-orange-700 font-medium"
-                        disabled={loading}
-                      >
-                        Resend OTP
-                      </button>
-                      )}
-                    </p>
-                  </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">Email</label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                  <Input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="you@example.com"
+                    className="pl-10 border-gray-200 focus:border-orange-500"
+                    required
+                  />
                 </div>
-              )}
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                  <Input
+                    type="password"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    placeholder="••••••••"
+                    className="pl-10 border-gray-200 focus:border-orange-500"
+                    required
+                  />
+                </div>
+              </div>
 
               {error && (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-600">
@@ -268,53 +192,49 @@ export default function UserLogin() {
                   </span>
                 ) : (
                   <span className="flex items-center justify-center">
-                    {showOTP ? 'Verify Email' : isLogin ? 'Login' : 'Create Account'}
+                    {isLogin ? 'Login' : 'Create Account'}
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </span>
                 )}
               </Button>
             </form>
 
-            {!showOTP && (
-              /* Features */
-              <div className="mt-6 pt-6 border-t border-gray-100">
-                <div className="grid grid-cols-3 gap-4 text-center">
-                  <div className="flex flex-col items-center">
-                    <div className="bg-orange-100 p-2 rounded-full mb-2">
-                      <Utensils className="h-4 w-4 text-orange-600" />
-                    </div>
-                    <p className="text-xs text-gray-600">1000+ Restaurants</p>
+            {/* Features */}
+            <div className="mt-6 pt-6 border-t border-gray-100">
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div className="flex flex-col items-center">
+                  <div className="bg-orange-100 p-2 rounded-full mb-2">
+                    <Utensils className="h-4 w-4 text-orange-600" />
                   </div>
-                  <div className="flex flex-col items-center">
-                    <div className="bg-red-100 p-2 rounded-full mb-2">
-                      <Sparkles className="h-4 w-4 text-red-600" />
-                    </div>
-                    <p className="text-xs text-gray-600">Fast Delivery</p>
+                  <p className="text-xs text-gray-600">1000+ Restaurants</p>
+                </div>
+                <div className="flex flex-col items-center">
+                  <div className="bg-red-100 p-2 rounded-full mb-2">
+                    <Sparkles className="h-4 w-4 text-red-600" />
                   </div>
-                  <div className="flex flex-col items-center">
-                    <div className="bg-pink-100 p-2 rounded-full mb-2">
-                      <ShoppingBag className="h-4 w-4 text-pink-600" />
-                    </div>
-                    <p className="text-xs text-gray-600">Best Prices</p>
+                  <p className="text-xs text-gray-600">Fast Delivery</p>
+                </div>
+                <div className="flex flex-col items-center">
+                  <div className="bg-pink-100 p-2 rounded-full mb-2">
+                    <ShoppingBag className="h-4 w-4 text-pink-600" />
                   </div>
+                  <p className="text-xs text-gray-600">Best Prices</p>
                 </div>
               </div>
-            )}
+            </div>
           </div>
         </Card>
 
         {/* Footer */}
-        {!showOTP && (
-          <p className="mt-6 text-center text-sm text-gray-500">
-            {isLogin ? "Don't have an account? " : "Already have an account? "}
-            <button
-              onClick={() => { setIsLogin(!isLogin); setError(''); setSuccess(''); }}
-              className="text-orange-600 hover:text-orange-700 font-medium"
-            >
-              {isLogin ? 'Sign up' : 'Login'}
-            </button>
-          </p>
-        )}
+        <p className="mt-6 text-center text-sm text-gray-500">
+          {isLogin ? "Don't have an account? " : "Already have an account? "}
+          <button
+            onClick={() => { setIsLogin(!isLogin); setError(''); setSuccess(''); }}
+            className="text-orange-600 hover:text-orange-700 font-medium"
+          >
+            {isLogin ? 'Sign up' : 'Login'}
+          </button>
+        </p>
       </div>
     </div>
   );
