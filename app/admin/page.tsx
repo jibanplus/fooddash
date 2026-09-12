@@ -37,10 +37,12 @@ export default function AdminDashboard() {
 
   const checkAuth = async () => {
     try {
-      await requireAuth('admin');
+      const user = await requireAuth('admin');
+      console.log('Admin authenticated:', user);
       setLoading(false);
     } catch (error) {
-      router.push('/login/admin');
+      console.error('Admin auth failed:', error);
+      router.push('/admin/login');
     }
   };
 

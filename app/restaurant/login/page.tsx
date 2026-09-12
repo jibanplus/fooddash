@@ -24,9 +24,15 @@ export default function RestaurantLogin() {
     setError('');
 
     try {
-      await signIn(formData.email, formData.password);
-      router.push('/restaurant');
+      const data = await signIn(formData.email, formData.password);
+      console.log('Restaurant login successful:', data);
+      
+      // Add a small delay to ensure session is set
+      setTimeout(() => {
+        router.push('/restaurant');
+      }, 500);
     } catch (err: any) {
+      console.error('Restaurant login error:', err);
       setError(err.message || 'Authentication failed');
     } finally {
       setLoading(false);

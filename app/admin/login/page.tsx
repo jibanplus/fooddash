@@ -24,9 +24,15 @@ export default function AdminLogin() {
     setError('');
 
     try {
-      await signIn(formData.email, formData.password);
-      router.push('/admin');
+      const data = await signIn(formData.email, formData.password);
+      console.log('Login successful:', data);
+      
+      // Add a small delay to ensure session is set
+      setTimeout(() => {
+        router.push('/admin');
+      }, 500);
     } catch (err: any) {
+      console.error('Login error:', err);
       setError(err.message || 'Authentication failed');
     } finally {
       setLoading(false);

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   Package, MapPin, Clock, DollarSign, 
-  Wallet, LogOut, Bike, Check, Phone,
+  Wallet, Bike, Check, Phone,
   Navigation, Star, TrendingUp, Bell
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { supabase, type Order, type DeliveryPartner } from '@/lib/supabase';
-import { requireAuth, signOut } from '@/lib/auth';
+import { requireAuth } from '@/lib/auth';
 
 export default function DeliveryDashboard() {
   const router = useRouter();
@@ -63,11 +63,6 @@ export default function DeliveryDashboard() {
         setAvailableOrders(availableData as Order[]);
       }
     }
-  };
-
-  const handleLogout = async () => {
-    await signOut();
-    router.push('/');
   };
 
   const acceptOrder = async (orderId: string) => {

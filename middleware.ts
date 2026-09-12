@@ -9,6 +9,11 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey)
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next()
   
+  // Skip middleware for login pages to avoid redirect loops
+  if (req.nextUrl.pathname.includes('/login')) {
+    return res
+  }
+  
   // Get session from cookies
   const accessToken = req.cookies.get('sb-access-token')?.value
   const refreshToken = req.cookies.get('sb-refresh-token')?.value
@@ -29,7 +34,7 @@ export async function middleware(req: NextRequest) {
   // Protect profile page
   if (req.nextUrl.pathname.startsWith('/profile')) {
     if (!session) {
-      return NextResponse.redirect(new URL('/login/user', req.url))
+      return NextResponse.redirect(new URL('/login', req.url))
     }
   }
 
@@ -41,6 +46,7 @@ export async function middleware(req: NextRequest) {
     // Check if user has admin role
     const userRole = session.user.user_metadata.role
     if (userRole !== 'admin') {
+      console.error('User role check failed:', userRole)
       return NextResponse.redirect(new URL('/', req.url))
     }
   }

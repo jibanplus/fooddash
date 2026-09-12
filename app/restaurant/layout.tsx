@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Store, ClipboardList, UtensilsCrossed, BarChart3, LogOut } from 'lucide-react';
+import { signOut } from '@/lib/auth';
 
 const navItems = [
   { href: '/restaurant', label: 'Orders', icon: ClipboardList },
@@ -12,6 +13,12 @@ const navItems = [
 
 export default function RestaurantLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await signOut();
+    router.push('/restaurant/login');
+  };
 
   return (
     <div className="flex min-h-screen bg-muted/30">
@@ -45,10 +52,10 @@ export default function RestaurantLayout({ children }: { children: React.ReactNo
           })}
         </nav>
         <div className="border-t p-3">
-          <Link href="/restaurant/login" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted">
+          <button onClick={handleLogout} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted w-full">
             <LogOut className="h-4 w-4" />
             Logout
-          </Link>
+          </button>
         </div>
       </aside>
 
