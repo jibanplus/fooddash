@@ -164,8 +164,7 @@ function RestaurantsContent() {
 
 export default function RestaurantsPage() {
   return (
-    <Suspense fallback={<div className="flex h-screen items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-orange-500 border-t-transparent" /></div></Suspense>
-}>
+    <Suspense fallback={<div className="flex h-screen items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-orange-500 border-t-transparent" /></div>}>
       <RestaurantsContent />
     </Suspense>
   );
