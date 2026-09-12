@@ -57,6 +57,19 @@ export async function signIn(email: string, password: string) {
     }
     throw error;
   }
+  
+  // Ensure session is properly set
+  if (data.session) {
+    console.log('Session established:', data.session.user.email, 'Role:', data.session.user.user_metadata.role);
+    
+    // Verify the session is actually valid
+    const { data: { session: verifiedSession } } = await supabase.auth.getSession();
+    if (!verifiedSession) {
+      console.error('Session verification failed immediately after login');
+      throw new Error('Session establishment failed');
+    }
+  }
+  
   return data;
 }
 

@@ -24,14 +24,15 @@ export default function DeliveryLogin() {
     setError('');
 
     try {
+      console.log('Delivery login attempt for:', formData.email);
       const data = await signIn(formData.email, formData.password);
       console.log('Delivery login successful:', data);
+      console.log('User metadata:', data.session?.user.user_metadata);
       
-      // Add a small delay to ensure session is set
-      setTimeout(() => {
-        router.push('/delivery');
-      }, 500);
+      // Force a hard redirect to ensure middleware picks up the session
+      window.location.href = '/delivery';
     } catch (err: any) {
+      console.error('Delivery login error:', err);
       setError(err.message || 'Authentication failed');
     } finally {
       setLoading(false);

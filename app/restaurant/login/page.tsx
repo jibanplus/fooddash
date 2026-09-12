@@ -24,13 +24,13 @@ export default function RestaurantLogin() {
     setError('');
 
     try {
+      console.log('Restaurant login attempt for:', formData.email);
       const data = await signIn(formData.email, formData.password);
       console.log('Restaurant login successful:', data);
+      console.log('User metadata:', data.session?.user.user_metadata);
       
-      // Add a small delay to ensure session is set
-      setTimeout(() => {
-        router.push('/restaurant');
-      }, 500);
+      // Force a hard redirect to ensure middleware picks up the session
+      window.location.href = '/restaurant';
     } catch (err: any) {
       console.error('Restaurant login error:', err);
       setError(err.message || 'Authentication failed');

@@ -24,15 +24,15 @@ export default function AdminLogin() {
     setError('');
 
     try {
+      console.log('Admin login attempt for:', formData.email);
       const data = await signIn(formData.email, formData.password);
-      console.log('Login successful:', data);
+      console.log('Admin login successful:', data);
+      console.log('User metadata:', data.session?.user.user_metadata);
       
-      // Add a small delay to ensure session is set
-      setTimeout(() => {
-        router.push('/admin');
-      }, 500);
+      // Force a hard redirect to ensure middleware picks up the session
+      window.location.href = '/admin';
     } catch (err: any) {
-      console.error('Login error:', err);
+      console.error('Admin login error:', err);
       setError(err.message || 'Authentication failed');
     } finally {
       setLoading(false);
