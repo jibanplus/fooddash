@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, Mail, Lock, ArrowRight, Sparkles, ShoppingBag, Utensils, Phone } from 'lucide-react';
+import { User, Mail, Lock, ArrowRight, Sparkles, ShoppingBag, Utensils, Phone, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
-import { signUp, signIn } from '@/lib/auth';
+import { signUp, signIn, getCurrentUser, signOut } from '@/lib/auth';
 
 export default function UserLogin() {
   const router = useRouter();
@@ -14,6 +14,7 @@ export default function UserLogin() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [user, setUser] = useState<any>(null);
 
   const [formData, setFormData] = useState({
     email: '',
@@ -21,6 +22,24 @@ export default function UserLogin() {
     fullName: '',
     phone: '',
   });
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  const checkAuth = async () => {
+    try {
+      const currentUser = await getCurrentUser();
+      setUser(currentUser);
+    } catch (error) {
+      setUser(null);
+    }
+  };
+
+  const handleLogout = async () => {
+    await signOut();
+    setUser(null);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,7 +51,10 @@ export default function UserLogin() {
       if (isLogin) {
         await signIn(formData.email, formData.password);
         setSuccess('Login successful! Redirecting...');
-        setTimeout(() => router.push('/'), 1000);
+        setTimeout(() => {
+          setUser(await getCurrentUser());
+          router.push('/');
+        }, 1000);
       } else {
         await signUp(formData.email, formData.password, 'user', {
           full_name: formData.fullName,
@@ -47,6 +69,62 @@ export default function UserLogin() {
       setLoading(false);
     }
   };
+
+  // If user is logged in, show profile/logout options
+  if (user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-100 via-red-50 to-pink-100 flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <Card className="overflow-hidden shadow-2xl border-0">
+            <div className="bg-gradient-to-r from-orange-500 to-red-500 px-6 py-8 text-white">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <User className="h-5 w-5" />
+                <h2 className="text-xl font-bold">Welcome, {user.full_name || 'User'}!</h2>
+              </div>
+              <p className="text-white/80 text-center">
+                You are logged in as {user.email}
+              </p>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <Button
+                onClick={() => router.push('/profile')}
+                className="w-full bg-orange-500 hover:bg-orange-600"
+              >
+                <User className="mr-2 h-4 w-4" />
+                Go to Profile
+              </Button>
+              <Button
+                onClick={() => router.push('/')}
+                variant="outline"
+                className="w-full"
+              >
+                <ShoppingBag className="mr-2 h-4 w-4" />
+                Browse Restaurants
+              </Button>
+              <Button
+                onClick={handleLogout}
+                variant="outline"
+                className="w-full text-red-600 border-red-600 hover:bg-red-50"
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                Logout
+              </Button>
+            </div>
+          </Card>
+
+          <div className="mt-6 text-center">
+            <button
+              onClick={() => router.push('/')}
+              className="text-sm text-gray-500 hover:text-gray-700"
+            >
+              ← Back to Home
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-100 via-red-50 to-pink-100 flex items-center justify-center p-4">

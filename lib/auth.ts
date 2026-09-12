@@ -66,37 +66,13 @@ export async function signOut() {
 }
 
 export async function verifyOTP(email: string, token: string) {
-  const { data, error } = await supabase.auth.verifyOtp({
-    email,
-    token,
-    type: 'signup',
-  });
-
-  if (error) {
-    if (error.message.includes('Invalid OTP')) {
-      throw new Error('Invalid OTP. Please check the code and try again.');
-    }
-    if (error.message.includes('expired')) {
-      throw new Error('OTP has expired. Please request a new one.');
-    }
-    throw error;
-  }
-  return data;
+  // OTP verification disabled for development
+  throw new Error('OTP verification is currently disabled. You can login directly.');
 }
 
 export async function resendOTP(email: string) {
-  const { data, error } = await supabase.auth.resend({
-    type: 'signup',
-    email,
-  });
-
-  if (error) {
-    if (error.message.includes('User not found')) {
-      throw new Error('User not found. Please sign up first.');
-    }
-    throw error;
-  }
-  return data;
+  // OTP resend disabled for development
+  throw new Error('OTP verification is currently disabled. You can login directly.');
 }
 
 export async function resetPassword(email: string) {

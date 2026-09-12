@@ -3,12 +3,13 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Search, MapPin, Navigation, Star, Clock, TrendingUp, ChevronRight, Utensils, Pizza, Cake, Coffee, Soup } from 'lucide-react';
+import { Search, MapPin, Navigation, Star, Clock, TrendingUp, ChevronRight, Utensils, Pizza, Cake, Coffee, Soup, User, ShoppingBag, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { supabase, type Restaurant, type Category } from '@/lib/supabase';
+import { getCurrentUser, signOut } from '@/lib/auth';
 
 const categoryIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   pizza: Pizza,
@@ -25,6 +26,7 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [address, setAddress] = useState('Detecting location...');
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
     async function fetchData() {
@@ -38,7 +40,24 @@ export default function Home() {
     }
     fetchData();
     setAddress('MG Road, Bengaluru');
+    
+    // Check if user is logged in
+    checkAuth();
   }, []);
+
+  const checkAuth = async () => {
+    try {
+      const currentUser = await getCurrentUser();
+      setUser(currentUser);
+    } catch (error) {
+      setUser(null);
+    }
+  };
+
+  const handleLogout = async () => {
+    await signOut();
+    setUser(null);
+  };
 
   const detectLocation = () => {
     setAddress('Detecting...');
@@ -72,12 +91,30 @@ export default function Home() {
               <span className="text-2xl font-bold text-white">FoodDash</span>
             </Link>
             <div className="flex items-center gap-3">
-              <Link href="/login" className="text-sm font-medium text-white/90 hover:text-white">
-                Login
-              </Link>
-              <Link href="/login/user" className="text-sm font-medium text-white/90 hover:text-white">
-                Sign Up
-              </Link>
+              {user ? (
+                <>
+                  <Link href="/profile" className="text-sm font-medium text-white/90 hover:text-white flex items-center gap-1">
+                    <User className="h-4 w-4" />
+                    Profile
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="text-sm font-medium text-white/90 hover:text-white flex items-center gap-1"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link href="/login" className="text-sm font-medium text-white/90 hover:text-white">
+                    Login
+                  </Link>
+                  <Link href="/login/user" className="text-sm font-medium text-white/90 hover:text-white">
+                    Sign Up
+                  </Link>
+                </>
+              )}
             </div>
           </div>
 
@@ -239,11 +276,140 @@ export default function Home() {
         </div>
       </div>
 
+      {/* Partner Programs */}
+      <div className="mx-auto max-w-6xl px-4 pb-8">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          {/* Restaurant Partner */}
+          <Card className="overflow-hidden p-6 hover:shadow-xl transition-all">
+            <div className="flex items-start gap-4">
+              <div className="bg-gradient-to-br from-orange-500 to-amber-600 p-4 rounded-full">
+                <Utensils className="h-8 w-8 text-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-xl font-bold mb-2">Become a Restaurant Partner</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Grow your business with FoodDash. Reach thousands of customers and increase your revenue.
+                </p>
+                <div className="flex gap-2">
+                  <Link href="/restaurant/login">
+                    <Button className="bg-orange-500 hover:bg-orange-600">
+                      Partner Login
+                    </Button>
+                  </Link>
+                  <Button variant="outline">
+                    Learn More
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          {/* Delivery Partner */}
+          <Card className="overflow-hidden p-6 hover:shadow-xl transition-all">
+            <div className="flex items-start gap-4">
+              <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-4 rounded-full">
+                <ShoppingBag className="h-8 w-8 text-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-xl font-bold mb-2">Become a Delivery Partner</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Earn money delivering orders on your own schedule. Flexible hours and weekly payouts.
+                </p>
+                <div className="flex gap-2">
+                  <Link href="/delivery/login">
+                    <Button className="bg-green-500 hover:bg-green-600">
+                      Partner Login
+                    </Button>
+                  </Link>
+                  <Button variant="outline">
+                    Learn More
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
+      </div>
+
+      {/* About Us */}
+      <div className="mx-auto max-w-6xl px-4 pb-8">
+        <Card className="p-8">
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-bold mb-2">About FoodDash</h2>
+            <p className="text-muted-foreground">Your trusted food delivery partner</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="text-center">
+              <div className="bg-orange-100 p-4 rounded-full mx-auto mb-4 w-16 h-16 flex items-center justify-center">
+                <ShoppingBag className="h-8 w-8 text-orange-600" />
+              </div>
+              <h3 className="font-bold mb-2">1000+ Restaurants</h3>
+              <p className="text-sm text-muted-foreground">Wide variety of cuisines and restaurants to choose from</p>
+            </div>
+            <div className="text-center">
+              <div className="bg-green-100 p-4 rounded-full mx-auto mb-4 w-16 h-16 flex items-center justify-center">
+                <Clock className="h-8 w-8 text-green-600" />
+              </div>
+              <h3 className="font-bold mb-2">Fast Delivery</h3>
+              <p className="text-sm text-muted-foreground">Average delivery time of 30 minutes</p>
+            </div>
+            <div className="text-center">
+              <div className="bg-blue-100 p-4 rounded-full mx-auto mb-4 w-16 h-16 flex items-center justify-center">
+                <Star className="h-8 w-8 text-blue-600" />
+              </div>
+              <h3 className="font-bold mb-2">Customer Satisfaction</h3>
+              <p className="text-sm text-muted-foreground">4.8/5 average rating from happy customers</p>
+            </div>
+          </div>
+        </Card>
+      </div>
+
       {/* Footer */}
-      <footer className="border-t bg-muted/30 py-8">
-        <div className="mx-auto max-w-6xl px-4 text-center text-sm text-muted-foreground">
-          <p className="mb-2 font-bold text-foreground">FoodDash</p>
-          <p>Your favorite food, delivered fast. © 2026 FoodDash. All rights reserved.</p>
+      <footer className="border-t bg-muted/30 py-12">
+        <div className="mx-auto max-w-6xl px-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-500 text-white font-bold">
+                  F
+                </div>
+                <span className="text-lg font-bold">FoodDash</span>
+              </div>
+              <p className="text-sm text-muted-foreground mb-4">
+                Your favorite food, delivered fast. We connect you with the best restaurants in your area.
+              </p>
+            </div>
+            <div>
+              <h4 className="font-bold mb-4">Company</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><Link href="#" className="hover:text-foreground">About Us</Link></li>
+                <li><Link href="#" className="hover:text-foreground">Careers</Link></li>
+                <li><Link href="#" className="hover:text-foreground">Blog</Link></li>
+                <li><Link href="#" className="hover:text-foreground">Press</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-bold mb-4">Partner With Us</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><Link href="/restaurant/login" className="hover:text-foreground">Restaurant Partners</Link></li>
+                <li><Link href="/delivery/login" className="hover:text-foreground">Delivery Partners</Link></li>
+                <li><Link href="#" className="hover:text-foreground">Partner Benefits</Link></li>
+                <li><Link href="#" className="hover:text-foreground">Success Stories</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-bold mb-4">Support</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><Link href="#" className="hover:text-foreground">Help Center</Link></li>
+                <li><Link href="#" className="hover:text-foreground">Contact Us</Link></li>
+                <li><Link href="#" className="hover:text-foreground">FAQs</Link></li>
+                <li><Link href="#" className="hover:text-foreground">Terms of Service</Link></li>
+              </ul>
+            </div>
+          </div>
+          <div className="mt-8 pt-8 border-t text-center text-sm text-muted-foreground">
+            <p>© 2026 FoodDash. All rights reserved.</p>
+          </div>
         </div>
       </footer>
     </div>
