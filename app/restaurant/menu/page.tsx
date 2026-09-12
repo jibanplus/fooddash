@@ -1,30 +1,67 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Plus, Pencil, X, Check, Leaf, Beef } from 'lucide-react';
+import { Plus, Pencil, X, Check, Leaf, Beef, Upload, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
-import { supabase, type MenuItem, type Restaurant } from '@/lib/supabase';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { supabase, type MenuItem, type Restaurant, type Category } from '@/lib/supabase';
+
+const CUISINE_CATEGORIES = [
+  'Indian',
+  'Chinese',
+  'South Indian',
+  'North Indian',
+  'Bengali',
+  'Italian',
+  'Mexican',
+  'Thai',
+  'Japanese',
+  'Continental',
+  'Biryani',
+  'Pizza',
+  'Burger',
+  'Desserts',
+  'Beverages',
+  'Snacks',
+  'Healthy',
+  'Seafood',
+];
 
 export default function MenuManagement() {
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
-  const [formData, setFormData] = useState({ name: '', description: '', price: '', is_veg: true, is_available: true, prep_time_min: '15' });
+  const [uploading, setUploading] = useState(false);
+  const [formData, setFormData] = useState({ 
+    name: '', 
+    description: '', 
+    price: '', 
+    is_veg: true, 
+    is_available: true, 
+    prep_time_min: '15',
+    category: '',
+    image_url: '' 
+  });
 
   useEffect(() => {
     async function fetchData() {
       const { data: restData } = await supabase.from('restaurants').select('*').limit(1).maybeSingle();
       if (restData) {
         setRestaurant(restData as Restaurant);
-        const { data: items } = await supabase.from('menu_items').select('*').eq('restaurant_id', (restData as Restaurant).id).order('name');
-        if (items) setMenuItems(items as MenuItem[]);
+        const [itemsRes, catRes] = await Promise.all([
+          supabase.from('menu_items').select('*').eq('restaurant_id', (restData as Restaurant).id).order('name'),
+          supabase.from('categories').select('*').order('sort_order'),
+        ]);
+        if (itemsRes.data) setMenuItems(itemsRes.data as MenuItem[]);
+        if (catRes.data) setCategories(catRes.data as Category[]);
       }
       setLoading(false);
     }
@@ -44,7 +81,16 @@ export default function MenuManagement() {
 
   const openAdd = () => {
     setEditingItem(null);
-    setFormData({ name: '', description: '', price: '', is_veg: true, is_available: true, prep_time_min: '15' });
+    setFormData({ 
+      name: '', 
+      description: '', 
+      price: '', 
+      is_veg: true, 
+      is_available: true, 
+      prep_time_min: '15',
+      category: '',
+      image_url: '' 
+    });
     setDialogOpen(true);
   };
 
@@ -57,8 +103,39 @@ export default function MenuManagement() {
       is_veg: item.is_veg,
       is_available: item.is_available,
       prep_time_min: String(item.prep_time_min),
+      category: item.category_id || '',
+      image_url: item.image_url || '',
     });
     setDialogOpen(true);
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('menu-images')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage
+        .from('menu-images')
+        .getPublicUrl(filePath);
+
+      setFormData({ ...formData, image_url: data.publicUrl });
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      alert('Failed to upload image');
+    } finally {
+      setUploading(false);
+    }
   };
 
   const saveItem = async () => {
@@ -71,6 +148,8 @@ export default function MenuManagement() {
       is_veg: formData.is_veg,
       is_available: formData.is_available,
       prep_time_min: parseInt(formData.prep_time_min) || 15,
+      category_id: formData.category || null,
+      image_url: formData.image_url || null,
     };
     if (editingItem) {
       const { data } = await supabase.from('menu_items').update(payload).eq('id', editingItem.id).select().maybeSingle();
@@ -150,7 +229,7 @@ export default function MenuManagement() {
 
       {/* Add/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingItem ? 'Edit Item' : 'Add New Item'}</DialogTitle>
           </DialogHeader>
@@ -163,6 +242,19 @@ export default function MenuManagement() {
               <label className="text-sm font-medium">Description</label>
               <Input value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="Item description" />
             </div>
+            <div>
+              <label className="text-sm font-medium">Category</label>
+              <Select value={formData.category} onValueChange={(v) => setFormData({ ...formData, category: v })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CUISINE_CATEGORIES.map((cat) => (
+                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-sm font-medium">Price (₹)</label>
@@ -171,6 +263,38 @@ export default function MenuManagement() {
               <div>
                 <label className="text-sm font-medium">Prep Time (min)</label>
                 <Input type="number" value={formData.prep_time_min} onChange={(e) => setFormData({ ...formData, prep_time_min: e.target.value })} placeholder="15" />
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Image</label>
+              <div className="mt-2 space-y-2">
+                {formData.image_url && (
+                  <div className="relative h-32 w-full overflow-hidden rounded-lg">
+                    <img src={formData.image_url} alt="Preview" className="h-full w-full object-cover" />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      className="absolute right-2 top-2"
+                      onClick={() => setFormData({ ...formData, image_url: '' })}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    disabled={uploading}
+                    className="cursor-pointer"
+                  />
+                  {uploading && (
+                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-orange-500 border-t-transparent" />
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">Upload an image for your menu item</p>
               </div>
             </div>
             <div className="flex items-center gap-4">
@@ -186,7 +310,7 @@ export default function MenuManagement() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-            <Button onClick={saveItem} className="bg-orange-500 hover:bg-orange-600">
+            <Button onClick={saveItem} className="bg-orange-500 hover:bg-orange-600" disabled={uploading}>
               {editingItem ? 'Update' : 'Add'} Item
             </Button>
           </DialogFooter>

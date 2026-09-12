@@ -2,16 +2,16 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Store, ClipboardList, UtensilsCrossed, BarChart3, Settings } from 'lucide-react';
+import { LayoutDashboard, Package, Wallet, User, LogOut } from 'lucide-react';
 
 const navItems = [
-  { href: '/restaurant', label: 'Orders', icon: ClipboardList },
-  { href: '/restaurant/menu', label: 'Menu', icon: UtensilsCrossed },
-  { href: '/restaurant/analytics', label: 'Analytics', icon: BarChart3 },
-  { href: '/profile', label: 'Profile', icon: Settings },
+  { href: '/delivery', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/delivery/orders', label: 'Orders', icon: Package },
+  { href: '/delivery/wallet', label: 'Wallet', icon: Wallet },
+  { href: '/delivery/profile', label: 'Profile', icon: User },
 ];
 
-export default function RestaurantLayout({ children }: { children: React.ReactNode }) {
+export default function DeliveryLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   return (
@@ -19,12 +19,12 @@ export default function RestaurantLayout({ children }: { children: React.ReactNo
       {/* Sidebar */}
       <aside className="hidden w-60 shrink-0 border-r bg-white md:flex md:flex-col">
         <div className="flex items-center gap-2 border-b p-4">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-500 text-white">
-            <Store className="h-5 w-5" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-green-500 text-white">
+            <Package className="h-5 w-5" />
           </div>
           <div>
             <p className="text-sm font-bold">FoodDash</p>
-            <p className="text-xs text-muted-foreground">Restaurant Portal</p>
+            <p className="text-xs text-muted-foreground">Delivery Portal</p>
           </div>
         </div>
         <nav className="flex-1 space-y-1 p-3">
@@ -36,7 +36,7 @@ export default function RestaurantLayout({ children }: { children: React.ReactNo
                 key={item.href}
                 href={item.href}
                 className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                  isActive ? 'bg-orange-50 text-orange-600' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  isActive ? 'bg-green-50 text-green-600' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                 }`}
               >
                 <Icon className="h-5 w-5" />
@@ -46,8 +46,8 @@ export default function RestaurantLayout({ children }: { children: React.ReactNo
           })}
         </nav>
         <div className="border-t p-3">
-          <Link href="/login?role=restaurant" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted">
-            <Settings className="h-4 w-4" />
+          <Link href="/login?role=delivery" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted">
+            <LogOut className="h-4 w-4" />
             Logout
           </Link>
         </div>
@@ -63,7 +63,7 @@ export default function RestaurantLayout({ children }: { children: React.ReactNo
               key={item.href}
               href={item.href}
               className={`flex flex-1 flex-col items-center gap-1 py-2 text-xs ${
-                isActive ? 'text-orange-600' : 'text-muted-foreground'
+                isActive ? 'text-green-600' : 'text-muted-foreground'
               }`}
             >
               <Icon className="h-5 w-5" />

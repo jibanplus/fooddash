@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Search, MapPin, Navigation, Star, Clock, TrendingUp, ChevronRight, Utensils, Pizza, Burger, Cake, Coffee, Soup } from 'lucide-react';
+import { Search, MapPin, Navigation, Star, Clock, TrendingUp, ChevronRight, Utensils, Pizza, Cake, Coffee, Soup } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -12,7 +12,6 @@ import { supabase, type Restaurant, type Category } from '@/lib/supabase';
 
 const categoryIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   pizza: Pizza,
-  burger: Burger,
   'bowl-food': Soup,
   utensils: Utensils,
   cake: Cake,
@@ -73,14 +72,11 @@ export default function Home() {
               <span className="text-2xl font-bold text-white">FoodDash</span>
             </Link>
             <div className="flex items-center gap-3">
-              <Link href="/restaurant" className="text-sm font-medium text-white/90 hover:text-white">
-                Restaurant
+              <Link href="/profile" className="text-sm font-medium text-white/90 hover:text-white">
+                Profile
               </Link>
-              <Link href="/delivery" className="text-sm font-medium text-white/90 hover:text-white">
-                Delivery
-              </Link>
-              <Link href="/admin" className="text-sm font-medium text-white/90 hover:text-white">
-                Admin
+              <Link href="/login" className="text-sm font-medium text-white/90 hover:text-white">
+                Login
               </Link>
             </div>
           </div>
