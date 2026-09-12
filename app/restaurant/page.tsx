@@ -50,19 +50,19 @@ export default function RestaurantDashboard() {
             .limit(50),
         ]);
         
-        if (ordersData) {
-          setOrders(ordersData as Order[]);
+        if (ordersData.data) {
+          setOrders(ordersData.data as Order[]);
           const itemsMap: Record<string, OrderItem[]> = {};
-          for (const o of ordersData as Order[]) {
+          for (const o of ordersData.data as Order[]) {
             const { data: items } = await supabase.from('order_items').select('*').eq('order_id', o.id);
             if (items) itemsMap[o.id] = items as OrderItem[];
           }
           setOrderItems(itemsMap);
         }
         
-        if (historyData) {
-          setOrderHistory(historyData as Order[]);
-          const totalRevenue = (historyData as Order[])
+        if (historyData.data) {
+          setOrderHistory(historyData.data as Order[]);
+          const totalRevenue = (historyData.data as Order[])
             .filter(o => o.status === 'delivered')
             .reduce((sum, o) => sum + (o.total - o.commission_amount), 0);
           setWalletBalance(totalRevenue);
@@ -113,7 +113,7 @@ export default function RestaurantDashboard() {
 
   const handleLogout = async () => {
     await signOut();
-    window.location.href = '/login?role=restaurant';
+    window.location.href = '/restaurant/login';
   };
 
   if (loading) {
@@ -159,7 +159,7 @@ export default function RestaurantDashboard() {
             <TabsTrigger value="orders">Orders</TabsTrigger>
             <TabsTrigger value="menu">Menu</TabsTrigger>
             <TabsTrigger value="wallet">Wallet</TabsTrigger>
-            <TabsTrigger value="profile">Profile</TabsTrigger>
+            <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
 
           {/* Orders Tab */}
@@ -367,11 +367,18 @@ export default function RestaurantDashboard() {
             </Card>
           </TabsContent>
 
-          {/* Profile Tab */}
-          <TabsContent value="profile" className="space-y-6">
+          {/* Settings Tab */}
+          <TabsContent value="settings" className="space-y-6">
             <Card className="p-6">
-              <h2 className="mb-4 text-lg font-bold">Restaurant Profile</h2>
+              <h2 className="mb-4 text-lg font-bold">Restaurant Settings</h2>
               <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">Restaurant Status</p>
+                    <p className="text-sm text-muted-foreground">Toggle online/offline status</p>
+                  </div>
+                  <Switch checked={restaurant?.is_online || false} onCheckedChange={toggleOnline} />
+                </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Restaurant Name</p>
                   <p className="font-medium">{restaurant?.name}</p>
@@ -389,12 +396,12 @@ export default function RestaurantDashboard() {
                   <p className="font-medium">{restaurant?.phone}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Rating</p>
-                  <p className="font-medium">{restaurant?.rating} / 5.0</p>
-                </div>
-                <div>
                   <p className="text-sm text-muted-foreground">Commission Rate</p>
                   <p className="font-medium">{restaurant?.commission_rate}%</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Rating</p>
+                  <p className="font-medium">{restaurant?.rating} / 5.0</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Status</p>

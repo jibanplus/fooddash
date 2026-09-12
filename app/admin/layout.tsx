@@ -2,13 +2,15 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Store, Package, Bike, Settings, LogOut } from 'lucide-react';
+import { LayoutDashboard, Store, Package, Bike, Settings, LogOut, UserPlus } from 'lucide-react';
 
 const navItems = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/restaurants', label: 'Restaurants', icon: Store },
   { href: '/admin/orders', label: 'Orders', icon: Package },
   { href: '/admin/delivery', label: 'Delivery', icon: Bike },
+  { href: '/admin/create-account', label: 'Create Account', icon: UserPlus },
+  { href: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -46,7 +48,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           })}
         </nav>
         <div className="border-t p-3">
-          <Link href="/login?role=admin" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted">
+          <Link href="/admin/login" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted">
             <LogOut className="h-4 w-4" />
             Logout
           </Link>

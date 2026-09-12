@@ -72,11 +72,11 @@ export default function Home() {
               <span className="text-2xl font-bold text-white">FoodDash</span>
             </Link>
             <div className="flex items-center gap-3">
-              <Link href="/profile" className="text-sm font-medium text-white/90 hover:text-white">
-                Profile
-              </Link>
               <Link href="/login" className="text-sm font-medium text-white/90 hover:text-white">
                 Login
+              </Link>
+              <Link href="/login/user" className="text-sm font-medium text-white/90 hover:text-white">
+                Sign Up
               </Link>
             </div>
           </div>

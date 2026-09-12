@@ -2,13 +2,12 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Store, ClipboardList, UtensilsCrossed, BarChart3, Settings } from 'lucide-react';
+import { Store, ClipboardList, UtensilsCrossed, BarChart3, LogOut } from 'lucide-react';
 
 const navItems = [
   { href: '/restaurant', label: 'Orders', icon: ClipboardList },
   { href: '/restaurant/menu', label: 'Menu', icon: UtensilsCrossed },
   { href: '/restaurant/analytics', label: 'Analytics', icon: BarChart3 },
-  { href: '/profile', label: 'Profile', icon: Settings },
 ];
 
 export default function RestaurantLayout({ children }: { children: React.ReactNode }) {
@@ -46,8 +45,8 @@ export default function RestaurantLayout({ children }: { children: React.ReactNo
           })}
         </nav>
         <div className="border-t p-3">
-          <Link href="/login?role=restaurant" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted">
-            <Settings className="h-4 w-4" />
+          <Link href="/restaurant/login" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted">
+            <LogOut className="h-4 w-4" />
             Logout
           </Link>
         </div>

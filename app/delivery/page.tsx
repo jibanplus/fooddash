@@ -35,7 +35,7 @@ export default function DeliveryDashboard() {
       await requireAuth('delivery');
       setLoading(false);
     } catch (error) {
-      router.push('/login?role=delivery');
+      router.push('/delivery/login');
     }
   };
 
@@ -56,7 +56,7 @@ export default function DeliveryDashboard() {
         .from('orders')
         .select('*')
         .eq('status', 'ready')
-        .isnull('delivery_partner_id')
+        .is('delivery_partner_id', null)
         .order('created_at', { ascending: false });
       
       if (availableData) {

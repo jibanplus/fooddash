@@ -37,18 +37,18 @@ export default function UserProfile() {
     try {
       const currentUser = await getCurrentUser();
       if (!currentUser) {
-        router.push('/login?role=user');
+        router.push('/login');
         return;
       }
       setUser(currentUser);
       setProfileData({
-        name: currentUser.name || '',
+        name: currentUser.full_name || '',
         phone: currentUser.phone || '',
         address: '',
       });
       setLoading(false);
     } catch (error) {
-      router.push('/login?role=user');
+      router.push('/login');
     }
   };
 
@@ -116,7 +116,7 @@ export default function UserProfile() {
             <Link href="/">
               <Button variant="ghost">Home</Button>
             </Link>
-            <Button variant="ghost" onClick={handleLogout}>
+            <Button variant="ghost" onClick={() => { handleLogout(); router.push('/login'); }}>
               <LogOut className="mr-2 h-4 w-4" /> Logout
             </Button>
           </div>
@@ -300,7 +300,7 @@ export default function UserProfile() {
                     <User className="h-8 w-8 text-orange-500" />
                   </div>
                   <div>
-                    <p className="text-xl font-bold">{user?.name || 'User'}</p>
+                    <p className="text-xl font-bold">{user?.full_name || 'User'}</p>
                     <p className="text-sm text-muted-foreground">{user?.email}</p>
                   </div>
                 </div>

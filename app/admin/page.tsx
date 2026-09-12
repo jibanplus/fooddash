@@ -40,7 +40,7 @@ export default function AdminDashboard() {
       await requireAuth('admin');
       setLoading(false);
     } catch (error) {
-      router.push('/login?role=admin');
+      router.push('/login/admin');
     }
   };
 

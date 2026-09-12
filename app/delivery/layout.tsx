@@ -46,7 +46,7 @@ export default function DeliveryLayout({ children }: { children: React.ReactNode
           })}
         </nav>
         <div className="border-t p-3">
-          <Link href="/login?role=delivery" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted">
+          <Link href="/delivery/login" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-muted">
             <LogOut className="h-4 w-4" />
             Logout
           </Link>
