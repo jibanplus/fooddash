@@ -51,8 +51,9 @@ export default function UserLogin() {
       if (isLogin) {
         await signIn(formData.email, formData.password);
         setSuccess('Login successful! Redirecting...');
-        setTimeout(() => {
-          setUser(await getCurrentUser());
+        setTimeout(async () => {
+          const currentUser = await getCurrentUser();
+          setUser(currentUser);
           router.push('/');
         }, 1000);
       } else {
