@@ -28,10 +28,7 @@ export default function CheckoutPage() {
 
   const discount = appliedPromo
     ? appliedPromo.discount_type === 'percentage'
-      ? Math.min(
-          (total * appliedPromo.discount_value) / 100,
-          appliedPromo.max_discount
-        )
+      ? Math.min((total * appliedPromo.discount_value) / 100, appliedPromo.max_discount)
       : appliedPromo.discount_value
     : 0;
 
@@ -136,6 +133,7 @@ export default function CheckoutPage() {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4">
         <p className="text-lg font-medium">Your cart is empty</p>
+
         <Link href="/restaurants">
           <Button className="bg-orange-500 hover:bg-orange-600">
             Browse Restaurants
@@ -264,11 +262,8 @@ export default function CheckoutPage() {
                     {appliedPromo.code}
                   </p>
 
-                  {/* FIX: PromoCode type-এ description নেই */}
                   <p className="text-xs text-green-600">
-                    {(appliedPromo as PromoCode & {
-                      description?: string;
-                    }).description || ''}
+                    {(appliedPromo as PromoCode & { description?: string }).description || ''}
                   </p>
                 </div>
               </div>
