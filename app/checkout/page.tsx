@@ -167,9 +167,9 @@ export default function CheckoutPage() {
                   <span className="flex h-6 w-6 items-center justify-center rounded-full bg-orange-50 text-xs font-bold text-orange-600">
                     {item.quantity}
                   </span>
-                  <span>{item.name}</span>
+                  <span>{item.menuItem.name}</span>
                 </div>
-                <span className="font-medium">₹{item.price * item.quantity}</span>
+                <span className="font-medium">₹{item.menuItem.price * item.quantity}</span>
               </div>
             ))}
           </div>
