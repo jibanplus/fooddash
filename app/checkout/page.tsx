@@ -104,11 +104,11 @@ export default function CheckoutPage() {
     await supabase.from('order_items').insert(
       items.map((item) => ({
         order_id: order.id,
-        menu_item_id: item.id,
-        name: item.name,
-        price: item.price,
+        menu_item_id: item.menuItem.id,
+        name: item.menuItem.name,
+        price: item.menuItem.price,
         quantity: item.quantity,
-        is_veg: item.is_veg,
+        is_veg: item.menuItem.isVeg,
       }))
     );
 
