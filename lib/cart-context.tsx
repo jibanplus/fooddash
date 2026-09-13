@@ -1,7 +1,8 @@
 'use client';
 
 import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
-import type { CartItem, MenuItem } from './types';
+import type { CartItem } from './types';
+import type { MenuItem } from './supabase';
 
 interface CartContextValue {
   items: CartItem[];
@@ -10,9 +11,11 @@ interface CartContextValue {
   updateQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;
   subtotal: number;
+  total: number;
   totalItems: number;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
+  restaurantId?: string;
 }
 
 const CartContext = createContext<CartContextValue | null>(null);
@@ -55,11 +58,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const clearCart = useCallback(() => setItems([]), []);
 
   const subtotal = useMemo(() => items.reduce((sum, item) => sum + item.total, 0), [items]);
+  const total = useMemo(() => subtotal, [subtotal]);
   const totalItems = useMemo(() => items.reduce((sum, item) => sum + item.quantity, 0), [items]);
+  const restaurantId = useMemo(() => items.length > 0 ? items[0].menuItem.restaurant_id : undefined, [items]);
 
   return (
     <CartContext.Provider
-      value={{ items, addItem, removeItem, updateQuantity, clearCart, subtotal, totalItems, isOpen, setIsOpen }}
+      value={{ items, addItem, removeItem, updateQuantity, clearCart, subtotal, total, totalItems, isOpen, setIsOpen, restaurantId }}
     >
       {children}
     </CartContext.Provider>

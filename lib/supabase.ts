@@ -94,8 +94,12 @@ export interface MenuItem {
   name: string;
   description: string;
   price: number;
-  category: string;
+  image?: string;
   image_url?: string;
-  is_available: boolean;
+  category: string;
+  isVeg?: boolean;
+  isBestseller?: boolean;
+  is_available?: boolean;
   restaurant_id: string;
+  addons?: { name: string; price: number }[];
 }
