@@ -1,95 +1,65 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import type { MenuItem } from './supabase';
+import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
+import type { CartItem, MenuItem } from './types';
 
-export type CartItem = {
-  id: string;
-  name: string;
-  price: number;
-  quantity: number;
-  image_url: string | null;
-  is_veg: boolean;
-  restaurant_id: string;
-  restaurant_name: string;
-};
-
-type CartContextType = {
+interface CartContextValue {
   items: CartItem[];
-  addItem: (item: MenuItem, restaurantId: string, restaurantName: string) => void;
+  addItem: (menuItem: MenuItem, quantity: number, addons: { name: string; price: number }[]) => void;
   removeItem: (id: string) => void;
-  updateQuantity: (id: string, qty: number) => void;
+  updateQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;
-  total: number;
-  itemCount: number;
-  restaurantId: string | null;
-};
+  subtotal: number;
+  totalItems: number;
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
+}
 
-const CartContext = createContext<CartContextType | undefined>(undefined);
+const CartContext = createContext<CartContextValue | null>(null);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [isOpen, setIsOpen] = useState(false);
 
-  useEffect(() => {
-    const saved = localStorage.getItem('food-cart');
-    if (saved) {
-      try {
-        setItems(JSON.parse(saved));
-      } catch {
-        // ignore
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem('food-cart', JSON.stringify(items));
-  }, [items]);
-
-  const addItem = useCallback((item: MenuItem, restaurantId: string, restaurantName: string) => {
-    setItems((prev) => {
-      const existing = prev.find((i) => i.id === item.id);
-      if (existing) {
-        return prev.map((i) =>
-          i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i
-        );
-      }
-      return [
-        ...prev,
-        {
-          id: item.id,
-          name: item.name,
-          price: item.price,
-          quantity: 1,
-          image_url: item.image_url,
-          is_veg: item.is_veg,
-          restaurant_id: restaurantId,
-          restaurant_name: restaurantName,
-        },
-      ];
-    });
-  }, []);
+  const addItem = useCallback(
+    (menuItem: MenuItem, quantity: number, addons: { name: string; price: number }[]) => {
+      const addonTotal = addons.reduce((sum, a) => sum + a.price, 0);
+      const total = (menuItem.price + addonTotal) * quantity;
+      const id = `${menuItem.id}-${Date.now()}`;
+      setItems((prev) => [...prev, { id, menuItem, quantity, addons, total }]);
+      setIsOpen(true);
+    },
+    []
+  );
 
   const removeItem = useCallback((id: string) => {
-    setItems((prev) => prev.filter((i) => i.id !== id));
+    setItems((prev) => prev.filter((item) => item.id !== id));
   }, []);
 
-  const updateQuantity = useCallback((id: string, qty: number) => {
-    if (qty <= 0) {
-      setItems((prev) => prev.filter((i) => i.id !== id));
+  const updateQuantity = useCallback((id: string, quantity: number) => {
+    if (quantity <= 0) {
+      setItems((prev) => prev.filter((item) => item.id !== id));
       return;
     }
-    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, quantity: qty } : i)));
+    setItems((prev) =>
+      prev.map((item) => {
+        if (item.id === id) {
+          const addonTotal = item.addons.reduce((sum, a) => sum + a.price, 0);
+          return { ...item, quantity, total: (item.menuItem.price + addonTotal) * quantity };
+        }
+        return item;
+      })
+    );
   }, []);
 
   const clearCart = useCallback(() => setItems([]), []);
 
-  const total = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
-  const itemCount = items.reduce((sum, i) => sum + i.quantity, 0);
-  const restaurantId = items.length > 0 ? items[0].restaurant_id : null;
+  const subtotal = useMemo(() => items.reduce((sum, item) => sum + item.total, 0), [items]);
+  const totalItems = useMemo(() => items.reduce((sum, item) => sum + item.quantity, 0), [items]);
 
   return (
     <CartContext.Provider
-      value={{ items, addItem, removeItem, updateQuantity, clearCart, total, itemCount, restaurantId }}
+      value={{ items, addItem, removeItem, updateQuantity, clearCart, subtotal, totalItems, isOpen, setIsOpen }}
     >
       {children}
     </CartContext.Provider>

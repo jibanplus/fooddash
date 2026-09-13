@@ -1,417 +1,493 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Search, MapPin, Navigation, Star, Clock, TrendingUp, ChevronRight, Utensils, Pizza, Cake, Coffee, Soup, User, ShoppingBag, LogOut } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Star, Clock, Search, MapPin, Plus, Check, Leaf, Flame, ArrowRight } from 'lucide-react';
+import { CartProvider, useCart } from '@/lib/cart-context';
+import { SiteHeader } from '@/components/site-header';
+import { SiteFooter } from '@/components/site-footer';
+import { CartDrawer } from '@/components/cart-drawer';
+import { mockRestaurants } from '@/lib/mock-data';
+import type { Restaurant, MenuItem } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { supabase, type Restaurant, type Category } from '@/lib/supabase';
-import { getCurrentUser, signOut } from '@/lib/auth';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
-const categoryIcons: Record<string, React.ComponentType<{ className?: string }>> = {
-  pizza: Pizza,
-  'bowl-food': Soup,
-  utensils: Utensils,
-  cake: Cake,
-  coffee: Coffee,
-};
-
-export default function Home() {
+function MarketplaceContent() {
   const router = useRouter();
-  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const { addItem } = useCart();
+  const [location, setLocation] = useState('Koramangala, Bangalore');
   const [searchQuery, setSearchQuery] = useState('');
-  const [address, setAddress] = useState('Detecting location...');
-  const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
+  const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
+  const [selectedMenuItem, setSelectedMenuItem] = useState<MenuItem | null>(null);
+  const [selectedAddons, setSelectedAddons] = useState<string[]>([]);
+  const [quantity, setQuantity] = useState(1);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [checkoutStep, setCheckoutStep] = useState<'address' | 'payment' | 'success'>('address');
+  const [address, setAddress] = useState('');
+  const [orderId, setOrderId] = useState('');
 
-  useEffect(() => {
-    async function fetchData() {
-      const [restRes, catRes] = await Promise.all([
-        supabase.from('restaurants').select('*').eq('is_online', true).eq('is_approved', true).order('rating', { ascending: false }),
-        supabase.from('categories').select('*').order('sort_order'),
-      ]);
-      if (restRes.data) setRestaurants(restRes.data);
-      if (catRes.data) setCategories(catRes.data);
-      setLoading(false);
-    }
-    fetchData();
-    setAddress('MG Road, Bengaluru');
-    
-    // Check if user is logged in
-    checkAuth();
-  }, []);
-
-  const checkAuth = async () => {
-    try {
-      const currentUser = await getCurrentUser();
-      setUser(currentUser);
-    } catch (error) {
-      setUser(null);
-    }
-  };
-
-  const handleLogout = async () => {
-    await signOut();
-    setUser(null);
-  };
-
-  const detectLocation = () => {
-    setAddress('Detecting...');
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        () => setAddress('Current Location, Bengaluru'),
-        () => setAddress('MG Road, Bengaluru')
-      );
-    } else {
-      setAddress('MG Road, Bengaluru');
-    }
-  };
-
-  const filteredRestaurants = restaurants.filter((r) =>
-    r.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    r.cuisine.toLowerCase().includes(searchQuery.toLowerCase())
+  const approvedRestaurants = useMemo(
+    () => mockRestaurants.filter((r) => r.status === 'approved'),
+    []
   );
 
+  const filteredRestaurants = useMemo(() => {
+    if (!searchQuery) return approvedRestaurants;
+    return approvedRestaurants.filter(
+      (r) =>
+        r.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        r.cuisine.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [approvedRestaurants, searchQuery]);
+
+  const handleAddItem = () => {
+    if (!selectedMenuItem) return;
+    const addons = (selectedMenuItem.addons || []).filter((a) =>
+      selectedAddons.includes(a.name)
+    );
+    addItem(selectedMenuItem, quantity, addons);
+    toast.success(`${quantity}× ${selectedMenuItem.name} added to cart`);
+    setSelectedMenuItem(null);
+    setSelectedAddons([]);
+    setQuantity(1);
+  };
+
+  const handleCheckout = () => {
+    setCheckoutOpen(true);
+    setCheckoutStep('address');
+  };
+
+  const handlePlaceOrder = () => {
+    const id = `FD-2026-${String(Math.floor(Math.random() * 900) + 100)}`;
+    setOrderId(id);
+    setCheckoutStep('success');
+    toast.success('Order placed successfully!');
+  };
+
   return (
-    <div className="min-h-screen bg-background">
+    <>
+      <SiteHeader location={location} />
+
       {/* Hero Section */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-orange-500 via-red-500 to-pink-500 pb-20 pt-12">
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1600')] bg-cover bg-center opacity-10" />
-        <div className="relative mx-auto max-w-6xl px-4">
-          {/* Logo */}
-          <div className="mb-8 flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-2xl font-bold text-orange-500">
-                F
+      <section className="relative overflow-hidden border-b bg-gradient-to-br from-accent via-background to-background">
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-20">
+          <div className="grid items-center gap-8 lg:grid-cols-2">
+            <div className="space-y-6 animate-slide-up">
+              <Badge variant="secondary" className="rounded-full px-4 py-1.5 text-sm">
+                <span className="mr-1.5 flex h-2 w-2 rounded-full bg-success" />
+                200+ restaurants near you
+              </Badge>
+              <h1 className="text-4xl font-bold leading-tight sm:text-5xl lg:text-6xl">
+                Delicious food,
+                <br />
+                <span className="text-primary">delivered to your door</span>
+              </h1>
+              <p className="max-w-md text-lg text-muted-foreground">
+                Order from your favourite restaurants and track your delivery in real time.
+                Fast, fresh, and always on time.
+              </p>
+
+              {/* Location Bar */}
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <div className="relative flex-1">
+                  <MapPin className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-primary" />
+                  <Input
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    placeholder="Enter your location"
+                    className="h-12 pl-10 text-base"
+                  />
+                </div>
+                <Button size="lg" className="h-12" onClick={() => toast.success('Location updated')}>
+                  Find Food
+                </Button>
               </div>
-              <span className="text-2xl font-bold text-white">FoodDash</span>
-            </Link>
-            <div className="flex items-center gap-3">
-              {user ? (
-                <>
-                  <Link href="/profile" className="text-sm font-medium text-white/90 hover:text-white flex items-center gap-1">
-                    <User className="h-4 w-4" />
-                    Profile
-                  </Link>
-                  <button
-                    onClick={handleLogout}
-                    className="text-sm font-medium text-white/90 hover:text-white flex items-center gap-1"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    Logout
-                  </button>
-                </>
-              ) : (
-                <>
-                  <Link href="/login" className="text-sm font-medium text-white/90 hover:text-white">
-                    Login
-                  </Link>
-                  <Link href="/login/user" className="text-sm font-medium text-white/90 hover:text-white">
-                    Sign Up
-                  </Link>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Hero Content */}
-          <div className="py-8 text-center">
-            <h1 className="mb-3 text-4xl font-bold text-white sm:text-5xl md:text-6xl">
-              Craving something?
-              <br />
-              <span className="text-white/90">We&apos;ll deliver it.</span>
-            </h1>
-            <p className="mb-8 text-lg text-white/80">
-              Order from your favorite restaurants in just a few taps
-            </p>
-
-            {/* Address Bar */}
-            <div className="mx-auto mb-4 flex max-w-2xl items-center gap-2 rounded-2xl bg-white p-2 shadow-2xl">
-              <MapPin className="ml-2 h-5 w-5 shrink-0 text-orange-500" />
-              <Input
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                className="border-0 bg-transparent text-gray-700 focus-visible:ring-0"
-                placeholder="Enter your delivery address"
-              />
-              <Button
-                onClick={detectLocation}
-                size="sm"
-                variant="ghost"
-                className="shrink-0 text-orange-500 hover:text-orange-600"
-              >
-                <Navigation className="h-4 w-4" />
-                GPS
-              </Button>
             </div>
 
-            {/* Search Bar */}
-            <div className="mx-auto flex max-w-2xl items-center gap-2 rounded-2xl bg-white p-2 shadow-2xl">
-              <Search className="ml-2 h-5 w-5 shrink-0 text-gray-400" />
-              <Input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="border-0 bg-transparent focus-visible:ring-0"
-                placeholder="Search for restaurants or cuisines..."
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') router.push(`/restaurants?q=${encodeURIComponent(searchQuery)}`);
-                }}
-              />
-              <Button
-                onClick={() => router.push(`/restaurants?q=${encodeURIComponent(searchQuery)}`)}
-                className="shrink-0 bg-orange-500 hover:bg-orange-600"
-              >
-                Search
-              </Button>
+            <div className="relative hidden lg:block">
+              <div className="grid grid-cols-2 gap-4">
+                <img
+                  src="https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=400"
+                  alt="Food"
+                  className="aspect-square w-full rounded-2xl object-cover shadow-lg"
+                />
+                <img
+                  src="https://images.pexels.com/photos/315755/pexels-photo-315755.jpeg?auto=compress&cs=tinysrgb&w=400"
+                  alt="Pizza"
+                  className="mt-8 aspect-square w-full rounded-2xl object-cover shadow-lg"
+                />
+                <img
+                  src="https://images.pexels.com/photos/2474661/pexels-photo-2474661.jpeg?auto=compress&cs=tinysrgb&w=400"
+                  alt="Butter Chicken"
+                  className="aspect-square w-full rounded-2xl object-cover shadow-lg"
+                />
+                <img
+                  src="https://images.pexels.com/photos/357756/pexels-photo-357756.jpeg?auto=compress&cs=tinysrgb&w=400"
+                  alt="Sushi"
+                  className="mt-8 aspect-square w-full rounded-2xl object-cover shadow-lg"
+                />
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Categories */}
-      <div className="mx-auto -mt-12 max-w-6xl px-4">
-        <Card className="glass-card p-6 shadow-xl">
-          <h2 className="mb-4 text-lg font-bold">What&apos;s on your mind?</h2>
-          <div className="flex gap-4 overflow-x-auto no-scrollbar">
-            {categories.map((cat) => {
-              const Icon = categoryIcons[cat.icon] || Utensils;
-              return (
-                <Link
-                  key={cat.id}
-                  href={`/restaurants?category=${encodeURIComponent(cat.name)}`}
-                  className="flex flex-col items-center gap-2 transition-transform hover:scale-105"
-                >
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-orange-50 text-orange-500 transition-colors hover:bg-orange-100">
-                    <Icon className="h-7 w-7" />
-                  </div>
-                  <span className="text-xs font-medium">{cat.name}</span>
-                </Link>
-              );
-            })}
+      {/* Search & Filters */}
+      <section className="border-b bg-background">
+        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search for restaurants or cuisines..."
+              className="h-12 pl-10 text-base"
+            />
           </div>
-        </Card>
-      </div>
-
-      {/* Top Restaurants */}
-      <div className="mx-auto max-w-6xl px-4 py-8">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-xl font-bold flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-orange-500" />
-            Top Rated Restaurants
-          </h2>
-          <Link href="/restaurants" className="text-sm font-medium text-orange-500 hover:underline flex items-center gap-1">
-            See all <ChevronRight className="h-4 w-4" />
-          </Link>
         </div>
+      </section>
 
-        {loading ? (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="h-64 animate-pulse rounded-2xl bg-muted" />
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredRestaurants.slice(0, 6).map((rest) => (
-              <Link key={rest.id} href={`/restaurant/${rest.id}`}>
-                <Card className="group overflow-hidden transition-all hover:shadow-xl hover:-translate-y-1">
-                  <div className="relative h-40 overflow-hidden">
-                    <img
-                      src={rest.cover_url || rest.image_url || 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=600'}
-                      alt={rest.name}
-                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    />
-                    <div className="absolute left-2 top-2 flex items-center gap-1 rounded-lg bg-white/90 px-2 py-1 text-sm font-bold text-green-600 shadow">
-                      <Star className="h-3.5 w-3.5 fill-green-500 text-green-500" />
-                      {rest.rating}
-                    </div>
-                    <div className="absolute right-2 top-2">
-                      <Badge className={rest.is_online ? 'bg-green-500' : 'bg-gray-400'}>
-                        {rest.is_online ? 'Open' : 'Closed'}
-                      </Badge>
-                    </div>
+      {/* Restaurant Grid */}
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <h2 className="mb-6 text-2xl font-bold">Restaurants near you</h2>
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {filteredRestaurants.map((restaurant) => (
+            <div
+              key={restaurant.id}
+              className="group cursor-pointer overflow-hidden rounded-xl border bg-card shadow-sm transition-all hover:shadow-lg animate-fade-in"
+              onClick={() => setSelectedRestaurant(restaurant)}
+            >
+              <div className="relative h-48 overflow-hidden">
+                <img
+                  src={restaurant.coverImage}
+                  alt={restaurant.name}
+                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+                <div className="absolute bottom-2 left-2 flex items-center gap-1 rounded-md bg-success px-2 py-1 text-sm font-bold text-success-foreground">
+                  <Star className="h-3.5 w-3.5 fill-current" />
+                  {restaurant.rating}
+                </div>
+                {restaurant.menu.some((m) => m.isBestseller) && (
+                  <div className="absolute right-2 top-2">
+                    <Badge className="bg-primary text-primary-foreground">Bestseller</Badge>
                   </div>
-                  <div className="p-4">
-                    <h3 className="mb-1 font-bold text-lg">{rest.name}</h3>
-                    <p className="mb-2 text-sm text-muted-foreground line-clamp-1">{rest.cuisine}</p>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Clock className="h-3.5 w-3.5" />
-                        {rest.prep_time_min} min
-                      </span>
-                      <span className="flex items-center gap-1">
-                        {'$'.repeat(rest.price_range)}
-                      </span>
-                    </div>
-                  </div>
-                </Card>
-              </Link>
-            ))}
+                )}
+              </div>
+              <div className="p-4">
+                <h3 className="text-lg font-bold leading-tight">{restaurant.name}</h3>
+                <p className="text-sm text-muted-foreground">{restaurant.cuisine}</p>
+                <div className="mt-3 flex items-center gap-4 text-sm text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    <Clock className="h-4 w-4" /> {restaurant.deliveryTime}
+                  </span>
+                  <span>₹{restaurant.priceForTwo} for two</span>
+                </div>
+                <p className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
+                  <MapPin className="h-3 w-3" /> {restaurant.location}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+        {filteredRestaurants.length === 0 && (
+          <div className="py-20 text-center">
+            <p className="text-lg font-semibold">No restaurants found</p>
+            <p className="text-sm text-muted-foreground">Try a different search term.</p>
           </div>
         )}
-      </div>
+      </section>
 
-      {/* Promo Banner */}
-      <div className="mx-auto max-w-6xl px-4 pb-8">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div className="rounded-2xl bg-gradient-to-br from-orange-400 to-red-500 p-6 text-white">
-            <p className="text-sm font-medium opacity-90">Use code</p>
-            <p className="text-2xl font-bold">WELCOME50</p>
-            <p className="mt-1 text-sm opacity-80">50% off on first order up to Rs.100</p>
-          </div>
-          <div className="rounded-2xl bg-gradient-to-br from-green-400 to-teal-500 p-6 text-white">
-            <p className="text-sm font-medium opacity-90">Use code</p>
-            <p className="text-2xl font-bold">FREEDEL</p>
-            <p className="mt-1 text-sm opacity-80">Free delivery on orders above Rs.300</p>
-          </div>
-          <div className="rounded-2xl bg-gradient-to-br from-blue-400 to-cyan-500 p-6 text-white">
-            <p className="text-sm font-medium opacity-90">Use code</p>
-            <p className="text-2xl font-bold">SAVE20</p>
-            <p className="mt-1 text-sm opacity-80">20% off up to Rs.80</p>
+      {/* How It Works */}
+      <section className="border-t bg-secondary/30">
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+          <h2 className="mb-8 text-center text-2xl font-bold">How it works</h2>
+          <div className="grid gap-8 md:grid-cols-3">
+            {[
+              { step: '01', title: 'Browse & Select', desc: 'Choose from 200+ verified restaurants near you' },
+              { step: '02', title: 'Order & Pay', desc: 'Add items to cart and pay securely via Paytm UPI' },
+              { step: '03', title: 'Track & Enjoy', desc: 'Follow your order in real time until it arrives' },
+            ].map((item) => (
+              <div key={item.step} className="text-center">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-2xl font-bold text-primary">
+                  {item.step}
+                </div>
+                <h3 className="mb-2 text-lg font-semibold">{item.title}</h3>
+                <p className="text-sm text-muted-foreground">{item.desc}</p>
+              </div>
+            ))}
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Partner Programs */}
-      <div className="mx-auto max-w-6xl px-4 pb-8">
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          {/* Restaurant Partner */}
-          <Card className="overflow-hidden p-6 hover:shadow-xl transition-all">
-            <div className="flex items-start gap-4">
-              <div className="bg-gradient-to-br from-orange-500 to-amber-600 p-4 rounded-full">
-                <Utensils className="h-8 w-8 text-white" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-xl font-bold mb-2">Become a Restaurant Partner</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Grow your business with FoodDash. Reach thousands of customers and increase your revenue.
-                </p>
-                <div className="flex gap-2">
-                  <Link href="/restaurant/login">
-                    <Button className="bg-orange-500 hover:bg-orange-600">
-                      Partner Login
-                    </Button>
-                  </Link>
-                  <Button variant="outline">
-                    Learn More
-                  </Button>
+      <SiteFooter />
+
+      {/* Restaurant Menu Modal */}
+      {selectedRestaurant && (
+        <Dialog open={!!selectedRestaurant} onOpenChange={(open) => !open && setSelectedRestaurant(null)}>
+          <DialogContent className="max-h-[85vh] max-w-2xl overflow-hidden p-0">
+            <div className="relative h-40 overflow-hidden">
+              <img
+                src={selectedRestaurant.coverImage}
+                alt={selectedRestaurant.name}
+                className="h-full w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+              <div className="absolute bottom-3 left-6 text-white">
+                <h2 className="text-2xl font-bold">{selectedRestaurant.name}</h2>
+                <p className="text-sm opacity-90">{selectedRestaurant.cuisine}</p>
+                <div className="mt-1 flex items-center gap-3 text-sm">
+                  <span className="flex items-center gap-1">
+                    <Star className="h-3.5 w-3.5 fill-current" /> {selectedRestaurant.rating}
+                  </span>
+                  <span>•</span>
+                  <span>{selectedRestaurant.deliveryTime}</span>
+                  <span>•</span>
+                  <span>₹{selectedRestaurant.priceForTwo} for two</span>
                 </div>
               </div>
             </div>
-          </Card>
+            <div className="max-h-[calc(85vh-10rem)] overflow-y-auto p-6">
+              {Object.entries(
+                selectedRestaurant.menu.reduce((acc, item) => {
+                  if (!acc[item.category]) acc[item.category] = [];
+                  acc[item.category].push(item);
+                  return acc;
+                }, {} as Record<string, MenuItem[]>)
+              ).map(([category, items]) => (
+                <div key={category} className="mb-6">
+                  <h3 className="mb-3 text-lg font-bold">{category}</h3>
+                  <div className="space-y-3">
+                    {items.map((item) => (
+                      <div key={item.id} className="flex gap-4 rounded-lg border p-3 transition-colors hover:bg-accent/50">
+                        <img
+                          src={item.image}
+                          alt={item.name}
+                          className="h-20 w-20 rounded-md object-cover"
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-start gap-2">
+                            <span className={`mt-0.5 inline-block h-3 w-3 shrink-0 rounded-sm border ${item.isVeg ? 'border-success' : 'border-destructive'}`}>
+                              {item.isVeg ? (
+                                <Leaf className="h-full w-full p-0.5 text-success" />
+                              ) : (
+                                <Flame className="h-full w-full p-0.5 text-destructive" />
+                              )}
+                            </span>
+                            <div>
+                              <p className="font-semibold leading-tight">{item.name}</p>
+                              {item.isBestseller && (
+                                <Badge variant="secondary" className="mt-1 text-xs">Bestseller</Badge>
+                              )}
+                            </div>
+                          </div>
+                          <p className="mt-1 text-sm text-muted-foreground">{item.description}</p>
+                          <div className="mt-2 flex items-center justify-between">
+                            <span className="font-bold text-primary">₹{item.price}</span>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setSelectedMenuItem(item);
+                                setSelectedAddons([]);
+                                setQuantity(1);
+                              }}
+                            >
+                              <Plus className="mr-1 h-4 w-4" /> Add
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
 
-          {/* Delivery Partner */}
-          <Card className="overflow-hidden p-6 hover:shadow-xl transition-all">
-            <div className="flex items-start gap-4">
-              <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-4 rounded-full">
-                <ShoppingBag className="h-8 w-8 text-white" />
+      {/* Menu Item Add Modal (with addons) */}
+      {selectedMenuItem && (
+        <Dialog open={!!selectedMenuItem} onOpenChange={(open) => !open && setSelectedMenuItem(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <img
+                src={selectedMenuItem.image}
+                alt={selectedMenuItem.name}
+                className="mb-3 h-40 w-full rounded-lg object-cover"
+              />
+              <DialogTitle className="flex items-center gap-2">
+                <span className={`inline-block h-4 w-4 rounded-sm border ${selectedMenuItem.isVeg ? 'border-success' : 'border-destructive'}`}>
+                  {selectedMenuItem.isVeg ? (
+                    <Leaf className="h-full w-full p-0.5 text-success" />
+                  ) : (
+                    <Flame className="h-full w-full p-0.5 text-destructive" />
+                  )}
+                </span>
+                {selectedMenuItem.name}
+              </DialogTitle>
+              <p className="text-sm text-muted-foreground">{selectedMenuItem.description}</p>
+              <p className="text-lg font-bold text-primary">₹{selectedMenuItem.price}</p>
+            </DialogHeader>
+
+            {selectedMenuItem.addons && selectedMenuItem.addons.length > 0 && (
+              <div className="space-y-2 py-2">
+                <p className="text-sm font-semibold">Customize your order</p>
+                {selectedMenuItem.addons.map((addon) => (
+                  <label key={addon.name} className="flex cursor-pointer items-center justify-between rounded-lg border p-3 hover:bg-accent/50">
+                    <div className="flex items-center gap-3">
+                      <Checkbox
+                        checked={selectedAddons.includes(addon.name)}
+                        onCheckedChange={(checked) => {
+                          setSelectedAddons((prev) =>
+                            checked ? [...prev, addon.name] : prev.filter((a) => a !== addon.name)
+                          );
+                        }}
+                      />
+                      <span className="text-sm">{addon.name}</span>
+                    </div>
+                    <span className="text-sm font-medium">+₹{addon.price}</span>
+                  </label>
+                ))}
               </div>
-              <div className="flex-1">
-                <h3 className="text-xl font-bold mb-2">Become a Delivery Partner</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Earn money delivering orders on your own schedule. Flexible hours and weekly payouts.
-                </p>
-                <div className="flex gap-2">
-                  <Link href="/delivery/login">
-                    <Button className="bg-green-500 hover:bg-green-600">
-                      Partner Login
-                    </Button>
-                  </Link>
-                  <Button variant="outline">
-                    Learn More
-                  </Button>
+            )}
+
+            <div className="flex items-center justify-between pt-2">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  className="flex h-9 w-9 items-center justify-center rounded-full border"
+                >
+                  -
+                </button>
+                <span className="w-8 text-center font-semibold">{quantity}</span>
+                <button
+                  onClick={() => setQuantity(quantity + 1)}
+                  className="flex h-9 w-9 items-center justify-center rounded-full border"
+                >
+                  +
+                </button>
+              </div>
+              <Button onClick={handleAddItem} className="flex-1 ml-4">
+                Add to Cart · ₹{(selectedMenuItem.price + (selectedMenuItem.addons || []).filter((a) => selectedAddons.includes(a.name)).reduce((s, a) => s + a.price, 0)) * quantity}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Checkout Modal */}
+      <Dialog open={checkoutOpen} onOpenChange={setCheckoutOpen}>
+        <DialogContent className="max-w-md">
+          {checkoutStep === 'address' && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Delivery Details</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-2">
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium">Full Name</label>
+                  <Input placeholder="Enter your name" />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium">Phone Number</label>
+                  <Input placeholder="+91 98765 43210" />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium">Delivery Address</label>
+                  <textarea
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    placeholder="Flat / House no, Building, Street, Area"
+                    className="min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  />
                 </div>
               </div>
-            </div>
-          </Card>
-        </div>
-      </div>
+              <Button
+                className="w-full"
+                disabled={!address.trim()}
+                onClick={() => setCheckoutStep('payment')}
+              >
+                Continue to Payment
+              </Button>
+            </>
+          )}
 
-      {/* About Us */}
-      <div className="mx-auto max-w-6xl px-4 pb-8">
-        <Card className="p-8">
-          <div className="text-center mb-6">
-            <h2 className="text-2xl font-bold mb-2">About FoodDash</h2>
-            <p className="text-muted-foreground">Your trusted food delivery partner</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="text-center">
-              <div className="bg-orange-100 p-4 rounded-full mx-auto mb-4 w-16 h-16 flex items-center justify-center">
-                <ShoppingBag className="h-8 w-8 text-orange-600" />
-              </div>
-              <h3 className="font-bold mb-2">1000+ Restaurants</h3>
-              <p className="text-sm text-muted-foreground">Wide variety of cuisines and restaurants to choose from</p>
-            </div>
-            <div className="text-center">
-              <div className="bg-green-100 p-4 rounded-full mx-auto mb-4 w-16 h-16 flex items-center justify-center">
-                <Clock className="h-8 w-8 text-green-600" />
-              </div>
-              <h3 className="font-bold mb-2">Fast Delivery</h3>
-              <p className="text-sm text-muted-foreground">Average delivery time of 30 minutes</p>
-            </div>
-            <div className="text-center">
-              <div className="bg-blue-100 p-4 rounded-full mx-auto mb-4 w-16 h-16 flex items-center justify-center">
-                <Star className="h-8 w-8 text-blue-600" />
-              </div>
-              <h3 className="font-bold mb-2">Customer Satisfaction</h3>
-              <p className="text-sm text-muted-foreground">4.8/5 average rating from happy customers</p>
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      {/* Footer */}
-      <footer className="border-t bg-muted/30 py-12">
-        <div className="mx-auto max-w-6xl px-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-500 text-white font-bold">
-                  F
+          {checkoutStep === 'payment' && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Payment Method</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3 py-2">
+                <div className="flex items-center gap-3 rounded-lg border-2 border-primary bg-accent/50 p-4">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold">
+                    U
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-semibold">Paytm UPI</p>
+                    <p className="text-xs text-muted-foreground">Pay instantly via UPI</p>
+                  </div>
+                  <Check className="h-5 w-5 text-primary" />
                 </div>
-                <span className="text-lg font-bold">FoodDash</span>
+                <div className="rounded-lg border p-4 opacity-50">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
+                      <span className="text-sm font-bold">C</span>
+                    </div>
+                    <div>
+                      <p className="font-semibold">Credit / Debit Card</p>
+                      <p className="text-xs text-muted-foreground">Coming soon</p>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <p className="text-sm text-muted-foreground mb-4">
-                Your favorite food, delivered fast. We connect you with the best restaurants in your area.
+              <Button className="w-full" size="lg" onClick={handlePlaceOrder}>
+                Pay & Place Order
+              </Button>
+            </>
+          )}
+
+          {checkoutStep === 'success' && (
+            <div className="py-6 text-center">
+              <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-success/10">
+                <Check className="h-10 w-10 text-success" />
+              </div>
+              <h2 className="text-2xl font-bold">Order Placed!</h2>
+              <p className="mt-2 text-muted-foreground">
+                Your order <span className="font-semibold text-foreground">{orderId}</span> has been placed successfully.
               </p>
+              <p className="mt-1 text-sm text-muted-foreground">You can track your order in real time.</p>
+              <div className="mt-6 flex flex-col gap-2">
+                <Button onClick={() => router.push(`/orders/track?id=${orderId}`)}>
+                  Track Your Order <ArrowRight className="ml-1 h-4 w-4" />
+                </Button>
+                <Button variant="outline" onClick={() => setCheckoutOpen(false)}>
+                  Continue Browsing
+                </Button>
+              </div>
             </div>
-            <div>
-              <h4 className="font-bold mb-4">Company</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link href="#" className="hover:text-foreground">About Us</Link></li>
-                <li><Link href="#" className="hover:text-foreground">Careers</Link></li>
-                <li><Link href="#" className="hover:text-foreground">Blog</Link></li>
-                <li><Link href="#" className="hover:text-foreground">Press</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-bold mb-4">Partner With Us</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link href="/restaurant/login" className="hover:text-foreground">Restaurant Partners</Link></li>
-                <li><Link href="/delivery/login" className="hover:text-foreground">Delivery Partners</Link></li>
-                <li><Link href="#" className="hover:text-foreground">Partner Benefits</Link></li>
-                <li><Link href="#" className="hover:text-foreground">Success Stories</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-bold mb-4">Support</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link href="#" className="hover:text-foreground">Help Center</Link></li>
-                <li><Link href="#" className="hover:text-foreground">Contact Us</Link></li>
-                <li><Link href="#" className="hover:text-foreground">FAQs</Link></li>
-                <li><Link href="#" className="hover:text-foreground">Terms of Service</Link></li>
-              </ul>
-            </div>
-          </div>
-          <div className="mt-8 pt-8 border-t text-center text-sm text-muted-foreground">
-            <p>© 2026 FoodDash. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
-    </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <CartDrawer onCheckout={handleCheckout} />
+    </>
+  );
+}
+
+export default function Home() {
+  return (
+    <CartProvider>
+      <MarketplaceContent />
+    </CartProvider>
   );
 }

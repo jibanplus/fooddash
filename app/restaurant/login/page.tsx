@@ -2,152 +2,96 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Store, Mail, Lock, ArrowRight, ChefHat } from 'lucide-react';
+import { UtensilsCrossed, Store, Lock, Mail, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card } from '@/components/ui/card';
-import { signIn } from '@/lib/auth';
+import { toast } from 'sonner';
+import Link from 'next/link';
 
 export default function RestaurantLogin() {
   const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
 
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-  });
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
-
-    try {
-      console.log('Restaurant login attempt for:', formData.email);
-      const data = await signIn(formData.email, formData.password);
-      console.log('Restaurant login successful:', data);
-      console.log('User metadata:', data.session?.user.user_metadata);
-      
-      // Force a hard redirect to ensure middleware picks up the session
-      window.location.href = '/restaurant';
-    } catch (err: any) {
-      console.error('Restaurant login error:', err);
-      setError(err.message || 'Authentication failed');
-    } finally {
-      setLoading(false);
+    if (!email || !password) {
+      toast.error('Please enter your credentials');
+      return;
     }
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      toast.success('Welcome back, Spice Garden!');
+      router.push('/restaurant/dashboard');
+    }, 800);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-100 via-amber-50 to-yellow-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Animated Header */}
-        <div className="mb-8 text-center">
-          <div className="relative inline-block">
-            <div className="absolute inset-0 bg-gradient-to-r from-orange-400 to-amber-500 rounded-full blur-xl opacity-30 animate-pulse" />
-            <div className="relative bg-gradient-to-br from-orange-500 to-amber-600 p-6 rounded-full shadow-2xl">
-              <Store className="h-12 w-12 text-white" />
-            </div>
+    <div className="flex min-h-screen flex-col bg-gradient-to-br from-accent via-background to-background">
+      <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 py-8">
+        <Link href="/" className="mb-8 flex items-center justify-center gap-2">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <UtensilsCrossed className="h-6 w-6" />
           </div>
-          <h1 className="mt-6 text-3xl font-bold bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">
-            Restaurant Portal
-          </h1>
-          <p className="mt-2 text-gray-600">Manage your restaurant with FoodDash</p>
-        </div>
+          <span className="text-2xl font-bold">FoodDash</span>
+        </Link>
 
-        <Card className="overflow-hidden shadow-2xl border-0">
-          {/* Gradient Header */}
-          <div className="bg-gradient-to-r from-orange-500 to-amber-500 px-6 py-8 text-white">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <ChefHat className="h-5 w-5" />
-              <h2 className="text-xl font-bold">Restaurant Login</h2>
-              <ChefHat className="h-5 w-5" />
+        <div className="rounded-2xl border bg-card p-8 shadow-lg animate-slide-up">
+          <div className="mb-6 text-center">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+              <Store className="h-7 w-7 text-primary" />
             </div>
-            <p className="text-white/80 text-center">
-              Access your restaurant dashboard
+            <h1 className="text-2xl font-bold">Restaurant Partner Login</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Sign in to manage your restaurant and orders
             </p>
           </div>
 
-          <div className="p-6">
-            {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Email</label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                  <Input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="restaurant@example.com"
-                    className="pl-10 border-gray-200 focus:border-orange-500"
-                    required
-                  />
-                </div>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label className="mb-1.5 block text-sm font-medium">Email</label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="owner@spicegarden.com"
+                  className="h-11 pl-10"
+                />
               </div>
-
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Password</label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                  <Input
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    placeholder="••••••••"
-                    className="pl-10 border-gray-200 focus:border-orange-500"
-                    required
-                  />
-                </div>
-              </div>
-
-              {error && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-600">
-                  {error}
-                </div>
-              )}
-
-              <Button
-                type="submit"
-                className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-lg"
-                disabled={loading}
-              >
-                {loading ? (
-                  <span className="flex items-center justify-center">
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent mr-2" />
-                    Processing...
-                  </span>
-                ) : (
-                  <span className="flex items-center justify-center">
-                    Login to Dashboard
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </span>
-                )}
-              </Button>
-            </form>
-
-            {/* Info */}
-            <div className="mt-6 pt-6 border-t border-gray-100 text-center">
-              <p className="text-sm text-gray-500">
-                Don't have a restaurant account?
-              </p>
-              <p className="text-xs text-gray-400 mt-1">
-                Contact admin to create your restaurant account
-              </p>
             </div>
-          </div>
-        </Card>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium">Password</label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="h-11 pl-10"
+                />
+              </div>
+            </div>
+            <Button type="submit" className="w-full" size="lg" disabled={loading}>
+              {loading ? 'Signing in...' : 'Sign In'}
+            </Button>
+          </form>
 
-        {/* Back to home */}
-        <div className="mt-6 text-center">
-          <button
-            onClick={() => router.push('/')}
-            className="text-sm text-gray-500 hover:text-gray-700"
-          >
-            ← Back to Home
-          </button>
+          <div className="mt-4 rounded-lg bg-accent/50 p-3 text-center text-xs text-muted-foreground">
+            Demo credentials: owner@spicegarden.com / any password
+          </div>
         </div>
+
+        <button
+          onClick={() => router.push('/')}
+          className="mt-6 flex w-full items-center justify-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" /> Back to home
+        </button>
       </div>
     </div>
   );
