@@ -25,40 +25,55 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false);
 
   const deliveryCharge = total > 300 ? 0 : 35;
+
   const discount = appliedPromo
     ? appliedPromo.discount_type === 'percentage'
-      ? Math.min((total * appliedPromo.discount_value) / 100, appliedPromo.max_discount)
+      ? Math.min(
+          (total * appliedPromo.discount_value) / 100,
+          appliedPromo.max_discount
+        )
       : appliedPromo.discount_value
     : 0;
+
   const grandTotal = total + deliveryCharge - discount;
 
   useEffect(() => {
     if (restaurantId) {
-      supabase.from('restaurants').select('*').eq('id', restaurantId).maybeSingle().then(({ data }) => {
-        if (data) setRestaurant(data as Restaurant);
-      });
+      supabase
+        .from('restaurants')
+        .select('*')
+        .eq('id', restaurantId)
+        .maybeSingle()
+        .then(({ data }) => {
+          if (data) setRestaurant(data as Restaurant);
+        });
     }
   }, [restaurantId]);
 
   const applyPromo = async () => {
     if (!promoCode) return;
+
     setPromoError('');
+
     const { data } = await supabase
       .from('promo_codes')
       .select('*')
       .eq('code', promoCode.toUpperCase())
       .eq('is_active', true)
       .maybeSingle();
+
     if (!data) {
       setPromoError('Invalid or expired promo code');
       setAppliedPromo(null);
       return;
     }
+
     if (total < data.min_order) {
       setPromoError(`Minimum order ₹${data.min_order} required`);
       setAppliedPromo(null);
       return;
     }
+
     setAppliedPromo(data as PromoCode);
   };
 
@@ -71,6 +86,7 @@ export default function CheckoutPage() {
   const placeOrder = async () => {
     if (!name || !phone || !address) return;
     if (!restaurantId || items.length === 0) return;
+
     setSubmitting(true);
 
     const commissionRate = restaurant?.commission_rate || 15;
@@ -121,7 +137,9 @@ export default function CheckoutPage() {
       <div className="flex min-h-screen flex-col items-center justify-center gap-4">
         <p className="text-lg font-medium">Your cart is empty</p>
         <Link href="/restaurants">
-          <Button className="bg-orange-500 hover:bg-orange-600">Browse Restaurants</Button>
+          <Button className="bg-orange-500 hover:bg-orange-600">
+            Browse Restaurants
+          </Button>
         </Link>
       </div>
     );
@@ -137,6 +155,7 @@ export default function CheckoutPage() {
               <ArrowLeft className="h-5 w-5" />
             </Button>
           </Link>
+
           <h1 className="text-lg font-bold">Checkout</h1>
         </div>
       </div>
@@ -148,48 +167,79 @@ export default function CheckoutPage() {
             <MapPin className="h-5 w-5 text-orange-500" />
             Delivery Details
           </h2>
+
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
-              <Input placeholder="Your name" value={name} onChange={(e) => setName(e.target.value)} />
-              <Input placeholder="Phone number" value={phone} onChange={(e) => setPhone(e.target.value)} />
+              <Input
+                placeholder="Your name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+
+              <Input
+                placeholder="Phone number"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+              />
             </div>
-            <Input placeholder="Full delivery address" value={address} onChange={(e) => setAddress(e.target.value)} />
+
+            <Input
+              placeholder="Full delivery address"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+            />
           </div>
         </Card>
 
         {/* Order Summary */}
         <Card className="p-5">
           <h2 className="mb-4 font-bold">Order Summary</h2>
+
           <div className="space-y-3">
             {items.map((item) => (
-              <div key={item.id} className="flex items-center justify-between text-sm">
+              <div
+                key={item.id}
+                className="flex items-center justify-between text-sm"
+              >
                 <div className="flex items-center gap-2">
                   <span className="flex h-6 w-6 items-center justify-center rounded-full bg-orange-50 text-xs font-bold text-orange-600">
                     {item.quantity}
                   </span>
+
                   <span>{item.menuItem.name}</span>
                 </div>
-                <span className="font-medium">₹{item.menuItem.price * item.quantity}</span>
+
+                <span className="font-medium">
+                  ₹{item.menuItem.price * item.quantity}
+                </span>
               </div>
             ))}
           </div>
+
           <Separator className="my-4" />
+
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Item Total</span>
               <span>₹{total}</span>
             </div>
+
             <div className="flex justify-between">
               <span className="text-muted-foreground">Delivery Charge</span>
-              <span>{deliveryCharge === 0 ? 'FREE' : `₹${deliveryCharge}`}</span>
+              <span>
+                {deliveryCharge === 0 ? 'FREE' : `₹${deliveryCharge}`}
+              </span>
             </div>
+
             {discount > 0 && (
               <div className="flex justify-between text-green-600">
                 <span>Discount</span>
                 <span>-₹{discount.toFixed(0)}</span>
               </div>
             )}
+
             <Separator className="my-2" />
+
             <div className="flex justify-between font-bold text-base">
               <span>Total</span>
               <span>₹{grandTotal.toFixed(0)}</span>
@@ -203,16 +253,32 @@ export default function CheckoutPage() {
             <Tag className="h-5 w-5 text-orange-500" />
             Promo Code
           </h2>
+
           {appliedPromo ? (
             <div className="flex items-center justify-between rounded-lg bg-green-50 p-3">
               <div className="flex items-center gap-2">
                 <Check className="h-4 w-4 text-green-600" />
+
                 <div>
-                  <p className="font-medium text-green-700">{appliedPromo.code}</p>
-                  <p className="text-xs text-green-600">{appliedPromo.description}</p>
+                  <p className="font-medium text-green-700">
+                    {appliedPromo.code}
+                  </p>
+
+                  {/* FIX: PromoCode type-এ description নেই */}
+                  <p className="text-xs text-green-600">
+                    {(appliedPromo as PromoCode & {
+                      description?: string;
+                    }).description || ''}
+                  </p>
                 </div>
               </div>
-              <Button variant="ghost" size="icon" onClick={removePromo} className="h-8 w-8">
+
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={removePromo}
+                className="h-8 w-8"
+              >
                 <X className="h-4 w-4" />
               </Button>
             </div>
@@ -224,10 +290,18 @@ export default function CheckoutPage() {
                 onChange={(e) => setPromoCode(e.target.value)}
                 className="flex-1"
               />
-              <Button variant="outline" onClick={applyPromo}>Apply</Button>
+
+              <Button variant="outline" onClick={applyPromo}>
+                Apply
+              </Button>
             </div>
           )}
-          {promoError && <p className="mt-2 text-sm text-red-500">{promoError}</p>}
+
+          {promoError && (
+            <p className="mt-2 text-sm text-red-500">
+              {promoError}
+            </p>
+          )}
         </Card>
 
         {/* Payment Method */}
@@ -236,13 +310,27 @@ export default function CheckoutPage() {
             <CreditCard className="h-5 w-5 text-orange-500" />
             Payment Method
           </h2>
+
           <div className="space-y-2">
             {[
-              { id: 'cod', label: 'Cash on Delivery', icon: Banknote },
-              { id: 'upi', label: 'UPI / Paytm', icon: Wallet },
-              { id: 'card', label: 'Credit / Debit Card', icon: CreditCard },
+              {
+                id: 'cod',
+                label: 'Cash on Delivery',
+                icon: Banknote,
+              },
+              {
+                id: 'upi',
+                label: 'UPI / Paytm',
+                icon: Wallet,
+              },
+              {
+                id: 'card',
+                label: 'Credit / Debit Card',
+                icon: CreditCard,
+              },
             ].map((method) => {
               const Icon = method.icon;
+
               return (
                 <button
                   key={method.id}
@@ -253,8 +341,16 @@ export default function CheckoutPage() {
                       : 'border-border hover:border-orange-200'
                   }`}
                 >
-                  <Icon className={`h-5 w-5 ${paymentMethod === method.id ? 'text-orange-500' : 'text-muted-foreground'}`} />
+                  <Icon
+                    className={`h-5 w-5 ${
+                      paymentMethod === method.id
+                        ? 'text-orange-500'
+                        : 'text-muted-foreground'
+                    }`}
+                  />
+
                   <span className="font-medium">{method.label}</span>
+
                   {paymentMethod === method.id && (
                     <Check className="ml-auto h-5 w-5 text-orange-500" />
                   )}
@@ -262,6 +358,7 @@ export default function CheckoutPage() {
               );
             })}
           </div>
+
           <p className="mt-3 text-xs text-muted-foreground">
             {/* API Integration Point: Connect Paytm PG SDK / UPI Intent here for live payments */}
           </p>
@@ -273,7 +370,9 @@ export default function CheckoutPage() {
           disabled={!name || !phone || !address || submitting}
           className="w-full bg-orange-500 py-6 text-base font-bold hover:bg-orange-600 disabled:opacity-50"
         >
-          {submitting ? 'Placing Order...' : `Place Order — ₹${grandTotal.toFixed(0)}`}
+          {submitting
+            ? 'Placing Order...'
+            : `Place Order — ₹${grandTotal.toFixed(0)}`}
         </Button>
       </div>
     </div>
